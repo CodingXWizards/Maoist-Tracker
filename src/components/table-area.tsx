@@ -1,32 +1,31 @@
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { fetchTableData } from "@/redux/reducers/tableSlice";
+import { useAppSelector } from "@/redux/hooks";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useEffect } from "react";
 
 export const TableArea = () => {
 
-  const { currDatabase, selectedTables } = useAppSelector(state => state.info);
   const { loading, table } = useAppSelector(state => state.table);
 
-  const dispatch = useAppDispatch();
-
-  // useEffect(() => {
-  //   if (currDatabase && currTable) {
-  //     dispatch(fetchTableData({ databaseName: currDatabase, tableName: currTable }));
-  //   }
-  // }, [currDatabase, currTable]);
-
-  if (!currDatabase || !selectedTables)
+  if (table.length === 0)
     return (
-      <section className="flex flex-grow overflow-auto">
+      <section className="flex h-full overflow-auto">
+        <Table>
+          <TableBody className="border-b">
+            {Array.from({ length: 100 }).map((_, row: number) => (
+              <TableRow key={row}>
+                {Array.from({ length: 10 }).map((_, col: number) => (
+                  <TableCell key={`${row}-${col}`} className="border border-slate-300"><div className="w-20" /></TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </section>
     );
 
@@ -36,20 +35,22 @@ export const TableArea = () => {
       {loading === 'Fullfilled' && (table.length === 0
         ? <p>No Table Data</p>
         : <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 bg-slate-100">
             <TableRow>
-              <TableHead>id</TableHead>
+              <TableHead className="border-r font-bold text-slate-700">ID</TableHead>
               {Object.keys(table[0]).map((head: string, index: number) => (
-                <TableHead key={index}>{head}</TableHead>
+                <TableHead key={index} className="whitespace-nowrap font-bold text-slate-700 border-r">{head}</TableHead>
               ))}
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {table.map((row: string[], index: number) => (
-              <TableRow key={index}>
-                <TableCell>{index}</TableCell>
-                {Object.values(row).map((col: string, i: number) => (
-                  <TableCell key={i}>{col}</TableCell>
+          <TableBody className="border-b">
+            {table.map((row: string[], rowIndex: number) => (
+              <TableRow key={rowIndex} className="overflow-hidden">
+                <TableCell key={`id-${rowIndex}`} className="border-r text-slate-600">{++rowIndex}</TableCell>
+                {Object.values(row).map((col: string, colIndex: number) => (
+                  <TableCell className="border-r p-0">
+                    <div key={`${rowIndex}-${colIndex}`} className="text-slate-700 max-h-20 overflow-auto p-4">{col.toString()}</div>
+                  </TableCell>
                 ))}
               </TableRow>
             ))}
