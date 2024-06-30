@@ -8,7 +8,7 @@ const App = () => {
       <Sidebar />
       <section className="flex flex-col w-[calc(100vw-240px)] h-full">
         <TableArea />
-        {/* <BottomBar /> */}
+        <BottomBar />
       </section>
     </main>
   );

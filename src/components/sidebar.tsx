@@ -9,6 +9,13 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { generateSummaryCDR, setTableData } from "@/redux/reducers/tableSlice";
 import { cn } from "@/lib/utils";
 
+enum databaseTypes {
+  Tower = 'tower',
+  CDR = 'cdr',
+  IPDR = 'ipdr',
+  IMEI = 'imei'
+};
+
 export const Sidebar = () => {
 
   const { loading: loadingDatabase, databases } = useAppSelector(state => state.databases);
@@ -16,7 +23,7 @@ export const Sidebar = () => {
   const { loading: loadingData } = useAppSelector(state => state.table);
 
   const { currDatabase, selectedTables } = useAppSelector(state => state.info);
-  const [type, setType] = useState<string>('tower');
+  const [type, setType] = useState<databaseTypes>(databaseTypes.Tower);
 
   const dispatch = useAppDispatch();
 
@@ -50,14 +57,22 @@ export const Sidebar = () => {
 
   return (
     <form onSubmit={handleSubmit} className="w-[240px] h-full border-r border-slate-400 flex flex-col items-center gap-y-4 p-4">
-      <div className="w-full flex items-center px-4 justify-between">
+      <div className="w-full grid grid-cols-2 px-4 justify-between">
         <div className="flex items-center gap-x-2">
-          <input type="radio" id="tdr" checked={type == 'tower'} onChange={() => setType('tower')} />
+          <input type="radio" id="tdr" checked={type == databaseTypes.Tower} onChange={() => setType(databaseTypes.Tower)} />
           <label htmlFor="tdr">TDR</label>
         </div>
         <div className="flex items-center gap-x-2">
-          <input type="radio" id="cdr" checked={type == 'cdr'} onChange={() => setType('cdr')} />
+          <input type="radio" id="cdr" checked={type == databaseTypes.CDR} onChange={() => setType(databaseTypes.CDR)} />
           <label htmlFor="cdr">CDR</label>
+        </div>
+        <div className="flex items-center gap-x-2">
+          <input type="radio" id="ipdr" checked={type == databaseTypes.IPDR} onChange={() => setType(databaseTypes.IPDR)} />
+          <label htmlFor="ipdr">IPDR</label>
+        </div>
+        <div className="flex items-center gap-x-2">
+          <input type="radio" id="imei" checked={type == databaseTypes.IMEI} onChange={() => setType(databaseTypes.IMEI)} />
+          <label htmlFor="imei">IMEI</label>
         </div>
       </div>
       <DropdownMenu>
