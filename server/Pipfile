@@ -8,9 +8,11 @@ fastapi = "*"
 uvicorn = "*"
 python-dotenv = "*"
 pyodbc = "*"
+pandas = "*"
+openpyxl = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.12"
-python_full_version = "3.12.3"
+python_full_version = "3.12.4"
