@@ -1,5 +1,3 @@
-# app/database.py
-
 import pyodbc
 from dotenv import load_dotenv
 import os
@@ -12,5 +10,5 @@ def get_db_instance():
     username = os.getenv("DATABASE_USER")
     password = os.getenv("DATABASE_PASSWORD")
 
-    conn = pyodbc.connect(f"DRIVER=ODBC Driver 17 for SQL Server;SERVER={server};DATABASE={database};UID={username};PWD={password}")
+    conn = pyodbc.connect(f"DRIVER=ODBC Driver 18 for SQL Server;SERVER={server};DATABASE={database};UID={username};PWD={password};TrustServerCertificate=yes")
     return conn
