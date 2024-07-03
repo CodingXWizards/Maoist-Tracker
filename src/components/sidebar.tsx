@@ -8,6 +8,9 @@ import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "./ui/dropdown-menu";
 import { generateSummaryCDR, setTableData } from "@/redux/reducers/tableSlice";
 import { cn } from "@/lib/utils";
+import * as XLSX from 'xlsx';
+import Papa from 'papaparse'
+import { saveAs } from 'file-saver';
 
 enum databaseTypes {
   Tower = 'tower',
@@ -20,7 +23,7 @@ export const Sidebar = () => {
 
   const { loading: loadingDatabase, databases } = useAppSelector(state => state.databases);
   const { loading: loadingTables, tableNames } = useAppSelector(state => state.tableName);
-  const { loading: loadingData } = useAppSelector(state => state.table);
+  const { loading: loadingData, table, currTab, tabs } = useAppSelector(state => state.table);
 
   const { currDatabase, selectedTables } = useAppSelector(state => state.info);
   const [type, setType] = useState<databaseTypes>(databaseTypes.Tower);
@@ -37,7 +40,6 @@ export const Sidebar = () => {
   }, [currDatabase]);
 
   const handleValueChange = (value: string) => {
-    console.log(selectedTables);
     let selectedTabl = [];
     if (selectedTables && selectedTables.includes(value)) {
       selectedTabl = selectedTables.filter(item => item !== value);
@@ -55,8 +57,21 @@ export const Sidebar = () => {
     }
   }
 
+  const handleXLSXExport = () => {
+    const worksheet = XLSX.utils.json_to_sheet(table[currTab || 0]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet 1");
+    XLSX.writeFile(workbook, `${tabs[currTab || 0]}.xlsx`)
+  }
+
+  const handleCSVExport = () => {
+    const csvContent = Papa.unparse(table[currTab || 0]); // Convert data to CSV string
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+    saveAs(blob, tabs[currTab || 0]);
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="w-[240px] h-full border-r border-slate-400 flex flex-col items-center gap-y-4 p-4">
+    <form onSubmit={handleSubmit} className="w-[200px] h-full border-r border-slate-400 flex text-sm flex-col items-center gap-y-2 p-2">
       <div className="w-full grid grid-cols-2 px-4 justify-between">
         <div className="flex items-center gap-x-2">
           <input type="radio" id="tdr" checked={type == databaseTypes.Tower} onChange={() => setType(databaseTypes.Tower)} />
@@ -76,7 +91,7 @@ export const Sidebar = () => {
         </div>
       </div>
       <DropdownMenu>
-        <DropdownMenuTrigger className="w-full bg-primary text-primary-foreground p-2 px-3 rounded-md">{loadingDatabase === 'Pending' ? "loading..." : currDatabase?.split("_").splice(-1) || "Select Database"}</DropdownMenuTrigger>
+        <DropdownMenuTrigger className="w-full bg-primary text-primary-foreground p-1.5 rounded-md">{loadingDatabase === 'Pending' ? "loading..." : currDatabase?.split("_").splice(-1) || "Select Database"}</DropdownMenuTrigger>
         <DropdownMenuContent className="max-h-60 overflow-auto">
           {loadingDatabase === 'Pending' && (<DropdownMenuItem>Loading...</DropdownMenuItem>)}
           {loadingDatabase === 'Rejected' && (<DropdownMenuItem>Error Loading...</DropdownMenuItem>)}
@@ -90,7 +105,7 @@ export const Sidebar = () => {
         </DropdownMenuContent>
       </DropdownMenu>
       <DropdownMenu>
-        <DropdownMenuTrigger className="w-full bg-primary text-primary-foreground p-2 px-3 rounded-md">
+        <DropdownMenuTrigger className="w-full bg-primary text-primary-foreground p-1.5 rounded-md">
           {loadingTables === 'Pending' ? "loading..." : 'Select Tables'}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="max-h-60 overflow-auto space-y-1">
@@ -111,7 +126,14 @@ export const Sidebar = () => {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button type="submit" className="w-full text-base">{loadingData === 'Pending' ? "Loading..." : "Generate Summary"}</Button>
+      <Button type="submit" size="sm" className="w-full">{loadingData === 'Pending' ? "Loading..." : "Generate Summary"}</Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger className="w-full bg-green-400 text-primary-foreground p-1.5 rounded-md">Export</DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={handleXLSXExport}>XLSX</DropdownMenuItem>
+          <DropdownMenuItem onClick={handleCSVExport}>CSV</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </form>
   );
 };
