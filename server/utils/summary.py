@@ -36,6 +36,7 @@ def calc_summary(database_name, table_names, conn):
         }
         headers = ["CdrNo", "B party", "Date", "Time", "Duration", "Call Type", "First Cell Id", "Last Cell Id", "IMEI", "IMSI", "Roaming", "LRN", "Circle", "Crime", "Operator"]
         df = pd.read_sql(query, conn)
+        print(table_name+"Concat Done")
         for old_column, new_column in columns_mapping.items():
             df.rename(columns={old_column: new_column}, inplace=True)
         all_data = pd.concat([all_data, df], ignore_index=True)
@@ -49,7 +50,7 @@ def calc_summary(database_name, table_names, conn):
     
     # Create a CDR-level aggregation
     cdr_metrics = []
-
+    table_i = 1
     for cdr_no, cdr_data in all_data.groupby('CdrNo'):
         total_messages = cdr_data['Call Type'].apply(is_message).sum()
         total_calls = cdr_data['Call Type'].apply(is_call).sum()
@@ -147,6 +148,8 @@ def calc_summary(database_name, table_names, conn):
             'Percentage for 80 cumulative calls conversation': float(conversations_percentage),
             'Missed Call Alerts': int(missed_call_alerts)
         })
+        print(f"Table {table_i} Done")
+        table_i+=1
 
     # return cdr_metrics
     return cdr_metrics
