@@ -4,13 +4,17 @@ import axios from "axios";
 const url = import.meta.env.VITE_API
 
 type InitialStateType = {
-    table: string[][];
+    table: string[][][];
+    tabs: string[];
+    currTab: number | null;
     loading: 'Idle' | 'Fullfilled' | 'Pending' | 'Rejected';
     errors: string | null;
 };
 
 const initialState: InitialStateType = {
     table: [],
+    tabs: [],
+    currTab: null,
     loading: 'Idle',
     errors: null
 }
@@ -19,7 +23,8 @@ export const fetchTableData = createAsyncThunk(
     "fetch/tableData",
     async (param: { databaseName: string, tableName: string }) => {
         const { data } = await axios.get(`${url}/table_data?database_name=${param.databaseName}&table_name=${param.tableName}`);
-        return data;
+        console.log(data);
+        return [data, param.tableName];
     }
 )
 
@@ -27,6 +32,7 @@ export const generateSummaryCDR = createAsyncThunk(
     "generate/cdr",
     async (param: { databaseName: string, tableNames: string[] }) => {
         const { data } = await axios.post(`${url}/generate_summary`, { database_name: param.databaseName, table_names: param.tableNames });
+        console.log(data);
         return data;
     }
 )
@@ -35,8 +41,11 @@ const databaseSlice = createSlice({
     name: "databases",
     initialState,
     reducers: {
-        setTableData: (state, action)=>{
+        setTableData: (state, action) => {
             state.table = action.payload;
+        },
+        setCurrTab: (state, action) => {
+            state.currTab = action.payload;
         }
     },
     extraReducers: builders => {
@@ -45,7 +54,9 @@ const databaseSlice = createSlice({
         }),
             builders.addCase(fetchTableData.fulfilled, (state, action) => {
                 state.loading = 'Fullfilled';
-                state.table = action.payload;
+                state.table.push(action.payload[0]);
+                state.tabs.push(action.payload[1]);
+                state.currTab = state.table.length - 1;
             }),
             builders.addCase(fetchTableData.rejected, (state, action) => {
                 state.loading = 'Rejected';
@@ -57,7 +68,9 @@ const databaseSlice = createSlice({
             }),
             builders.addCase(generateSummaryCDR.fulfilled, (state, action) => {
                 state.loading = 'Fullfilled';
-                state.table = action.payload;
+                state.table.push(action.payload);
+                state.tabs.push("Summary");
+                state.currTab = state.table.length - 1;
             }),
             builders.addCase(generateSummaryCDR.rejected, (state, action) => {
                 state.loading = 'Rejected';
@@ -67,4 +80,4 @@ const databaseSlice = createSlice({
 });
 
 export default databaseSlice.reducer;
-export const {setTableData} = databaseSlice.actions
+export const { setTableData, setCurrTab } = databaseSlice.actions
