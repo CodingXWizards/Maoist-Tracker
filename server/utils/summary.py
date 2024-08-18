@@ -39,7 +39,7 @@ def calc_summary_tdr(database_name, table_names, conn):
         }
 
         df = pd.read_sql(query, conn)
-        print(table_name+"Concat Done")
+        print(table_name + "Concat Done")
         for old_column, new_column in columns_mapping.items():
             df.rename(columns={old_column: new_column}, inplace=True)
         all_data = pd.concat([all_data, df], ignore_index=True)
@@ -55,33 +55,24 @@ def calc_summary_tdr(database_name, table_names, conn):
         a_party_data = all_data[all_data['A Party'] == a_party]
         
         result = {
-            'A Party': a_party,
-            'Count of Unique TdrNo': a_party_data['TdrNo'].nunique(),
-            'Total Entries in tdr': len(a_party_data),
-            'Out_Call': len(a_party_data[a_party_data['Call Type'] == 'CALL_OUT']),
-            'Incoming Call': len(a_party_data[a_party_data['Call Type'] == 'CALL_IN']),
-            'Outgoing SMS': len(a_party_data[a_party_data['Call Type'] == 'SMS_OUT']),
-            'Incoming SMS': len(a_party_data[a_party_data['Call Type'] == 'SMS_IN']),
-            'Days': a_party_data['Date'].nunique(),
-            'P2P Conversation': a_party_data['B Party'].apply(is_p2p).sum()
+            'A Party': str(a_party),
+            'Count of Unique TdrNo': int(a_party_data['TdrNo'].nunique()),
+            'Total Entries in tdr': int(len(a_party_data)),
+            'Out_Call': int(len(a_party_data[a_party_data['Call Type'] == 'CALL_OUT'])),
+            'Incoming Call': int(len(a_party_data[a_party_data['Call Type'] == 'CALL_IN'])),
+            'Outgoing SMS': int(len(a_party_data[a_party_data['Call Type'] == 'SMS_OUT'])),
+            'Incoming SMS': int(len(a_party_data[a_party_data['Call Type'] == 'SMS_IN'])),
+            'Days': int(a_party_data['Date'].nunique()),
+            'P2P Conversation': int(a_party_data['B Party'].apply(is_p2p).sum()),
+            'P2P Conversation Percentage': float((a_party_data['B Party'].apply(is_p2p).sum() / len(a_party_data)) * 100) if len(a_party_data) > 0 else 0.0
         }
-        
-        result['P2P Conversation Percentage'] = (result['P2P Conversation'] / result['Total Entries in tdr']) * 100 if result['Total Entries in tdr'] > 0 else 0
         
         results.append(result)
 
-    # Create a DataFrame from the results
-    result_df = pd.DataFrame(results)
-
-    # Sort the DataFrame by 'Count of Unique TdrNo' in descending order
-    result_df = result_df.sort_values('Count of Unique TdrNo', ascending=False)
-    result_df = result_df.astype(object).where(pd.notnull(result_df), None)
-    return result_df
-    # # Write the results to TdrSummary.xlsx
-    # output_file = 'TdrSummary.xlsx'
-    # result_df.to_excel(output_file, index=False)
-
-    # print(f"Results have been written to {output_file}")
+    # Sort the results list by 'Count of Unique TdrNo' in descending order
+    results = sorted(results, key=lambda x: x['Count of Unique TdrNo'], reverse=True)
+    
+    return results
 
 def calc_summary_cdr(database_name, table_names, conn):
     # Define incoming message types
