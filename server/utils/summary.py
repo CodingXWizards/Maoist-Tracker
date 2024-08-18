@@ -1,4 +1,5 @@
 import pandas as pd
+import re
 
 def is_message(call_type):
     return call_type in ['SMS_IN', 'SMS_OUT', 'DSM-SMS']
@@ -9,7 +10,80 @@ def is_call(call_type):
 def is_non_company_number(number):
     return len(number) == 10 and not any(char.isalpha() for char in number)
 
-def calc_summary(database_name, table_names, conn):
+def calc_summary_tdr(database_name, table_names, conn):
+    def is_p2p(number):
+        return bool(re.match(r'^\d{10,}$', str(number)))
+
+    # Initialize an empty DataFrame to store all data
+    all_data = pd.DataFrame()
+    for table_name in table_names:
+        query = f"SELECT * FROM [{database_name}].[dbo].[{table_name}]"
+        columns_mapping = {
+            'one': 'TdrNo',
+            'two': "A Party",
+            'three': 'B Party',
+            'four': 'Date',
+            'five': 'Time',
+            'six': 'Duration',
+            'f1': 'Call Type',
+            'eight': 'First Cell ID',
+            'nine': 'Last Cell ID',
+            'ten': 'IMEI',
+            'eleven': 'IMSI',
+            'f3': 'Roaming',
+            'f4': 'LRN',
+            'twelve': 'Circle',
+            'fourteen': 'Crime',
+            'thirteen': 'Operator',
+            'fifteen': 'Default'
+        }
+
+        df = pd.read_sql(query, conn)
+        print(table_name+"Concat Done")
+        for old_column, new_column in columns_mapping.items():
+            df.rename(columns={old_column: new_column}, inplace=True)
+        all_data = pd.concat([all_data, df], ignore_index=True)
+
+    # Get unique A Party values
+    unique_a_parties = all_data['A Party'].unique()
+
+    # Initialize a list to store the results
+    results = []
+
+    # For each unique A Party, calculate all required metrics
+    for a_party in unique_a_parties:
+        a_party_data = all_data[all_data['A Party'] == a_party]
+        
+        result = {
+            'A Party': a_party,
+            'Count of Unique TdrNo': a_party_data['TdrNo'].nunique(),
+            'Total Entries in tdr': len(a_party_data),
+            'Out_Call': len(a_party_data[a_party_data['Call Type'] == 'CALL_OUT']),
+            'Incoming Call': len(a_party_data[a_party_data['Call Type'] == 'CALL_IN']),
+            'Outgoing SMS': len(a_party_data[a_party_data['Call Type'] == 'SMS_OUT']),
+            'Incoming SMS': len(a_party_data[a_party_data['Call Type'] == 'SMS_IN']),
+            'Days': a_party_data['Date'].nunique(),
+            'P2P Conversation': a_party_data['B Party'].apply(is_p2p).sum()
+        }
+        
+        result['P2P Conversation Percentage'] = (result['P2P Conversation'] / result['Total Entries in tdr']) * 100 if result['Total Entries in tdr'] > 0 else 0
+        
+        results.append(result)
+
+    # Create a DataFrame from the results
+    result_df = pd.DataFrame(results)
+
+    # Sort the DataFrame by 'Count of Unique TdrNo' in descending order
+    result_df = result_df.sort_values('Count of Unique TdrNo', ascending=False)
+    result_df = result_df.astype(object).where(pd.notnull(result_df), None)
+    return result_df
+    # # Write the results to TdrSummary.xlsx
+    # output_file = 'TdrSummary.xlsx'
+    # result_df.to_excel(output_file, index=False)
+
+    # print(f"Results have been written to {output_file}")
+
+def calc_summary_cdr(database_name, table_names, conn):
     # Define incoming message types
     incoming_messages = ['SMS_IN', 'A2P_SMSIN', 'P2P_SMSIN', 'A2P_SMSIN_wifi', 'P2P_SMSIN_wifi']
 
@@ -34,7 +108,6 @@ def calc_summary(database_name, table_names, conn):
             'fourteen': 'Crime',
             'thirteen': 'Operator'
         }
-        headers = ["CdrNo", "B party", "Date", "Time", "Duration", "Call Type", "First Cell Id", "Last Cell Id", "IMEI", "IMSI", "Roaming", "LRN", "Circle", "Crime", "Operator"]
         df = pd.read_sql(query, conn)
         print(table_name+"Concat Done")
         for old_column, new_column in columns_mapping.items():
