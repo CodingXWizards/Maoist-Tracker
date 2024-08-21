@@ -166,6 +166,7 @@ def calc_summary_cdr(database_name, table_names, conn):
         distinct_cell_ids = cdr_data['First Cell ID'].nunique()
 
         distinct_imei_count = cdr_data['IMEI'].nunique()
+        distinct_imsi_count = cdr_data['IMSI'].nunique()
 
         # New Counters for P2P in SMS by IN SMS
         total_incoming_sms = len(cdr_data[cdr_data['Call Type'] == 'SMS_IN'])
@@ -206,11 +207,14 @@ def calc_summary_cdr(database_name, table_names, conn):
             'Off Days Percentage': float(off_days_percentage),
             'Distinct Cell ID Count': int(distinct_cell_ids),
             'Distinct IMEI': int(distinct_imei_count),
+            'Distinct IMSI': int(distinct_imsi_count),
             'Incoming Sms Percentage P2P by all P2P conversation': float(incomingmessagesp),
             'Incoming Calls Percentage P2P by all P2P conversation': float(incomingcallsp),
             'Distinct P2P messages percentage': float(p2psmsinpercent),
             'Percentage for 80 cumulative calls conversation': float(conversations_percentage),
-            'Missed Call Alerts': int(missed_call_alerts)
+            'Missed Call Alerts': int(missed_call_alerts),
+            'Start Date': (cdr_data['Date'].min()),
+            'Last Date': (cdr_data['Date'].max()),
         })
         print(f"Table {table_i} Done")
         table_i+=1
