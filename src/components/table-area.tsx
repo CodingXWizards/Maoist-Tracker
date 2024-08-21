@@ -8,11 +8,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "./ui/button";
-import { fetchTableData, setCurrTab } from "@/redux/reducers/tableSlice";
+import { fetchTableData, setCurrTab, setLoadedDatabases } from "@/redux/reducers/tableSlice";
+import { setLoadingText } from "@/redux/reducers/infoSlice";
 
 export const TableArea = () => {
 
-  const { loading, table, tabs, currTab } = useAppSelector(state => state.table);
+  const { loading, table, tabs, currTab, loadedDatabases } = useAppSelector(state => state.table);
   const { currDatabase } = useAppSelector(state => state.info);
   const dispatch = useAppDispatch();
 
@@ -33,46 +34,44 @@ export const TableArea = () => {
       </section>
     );
 
-  const handleNumberClicked = (tableName: string) => {
-
+  const handleNumberClicked = async (tableName: string) => {
+    dispatch(setLoadingText(`Fetching ${tableName}`));
+    dispatch(setLoadedDatabases(currDatabase));
     if (tabs.includes(tableName)) {
-      dispatch(setCurrTab(tabs.indexOf(tableName)));
+      await dispatch(setCurrTab(tabs.indexOf(tableName)));
     } else {
-      dispatch(fetchTableData({ databaseName: currDatabase || "", tableName }));
+      await dispatch(fetchTableData({ databaseName: currDatabase || "", tableName }));
     }
+    dispatch(setLoadingText(null));
   };
 
   return (
     <section className="flex h-full overflow-auto">
-      {loading === 'Pending' && <p>Loading...</p>}
-      {loading === 'Fullfilled' && (table[currTab || 0].length === 0
-        ? <p>No Table Data</p>
-        : <Table>
-          <TableHeader className="sticky top-0 bg-slate-100">
-            <TableRow>
-              <TableHead className="border-r font-bold text-slate-700">ID</TableHead>
-              {Object.keys(table[currTab || 0][0]).map((head: string, index: number) => (
-                <TableHead key={index} className="whitespace-nowrap font-bold text-slate-700 border-r">{head}</TableHead>
+      <Table>
+        <TableHeader className="sticky top-0 bg-slate-100">
+          <TableRow>
+            <TableHead className="border-r font-bold text-slate-700">ID</TableHead>
+            {Object.keys(table[currTab || 0][0]).map((head: string, index: number) => (
+              <TableHead key={index} className="whitespace-nowrap font-bold text-slate-700 border-r">{head}</TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody className="border-b">
+          {table[currTab || 0].map((row: string[], rowIndex: number) => (
+            <TableRow key={`row-${rowIndex}`} className="overflow-hidden">
+              <TableCell className="border-r text-slate-600">{++rowIndex}</TableCell>
+              {Object.values(row).map((col: string, colIndex: number) => (
+                <TableCell key={`col-${colIndex}`} className="border-r p-0">
+                  {(colIndex === 0 && tabs[currTab || 0].toString().includes('Summary') && loadedDatabases[currTab || 0]?.split('_')[1] === 'cdr')
+                    ? <Button variant="link" onClick={() => handleNumberClicked(col)}>{col ? col.toString() : col}</Button>
+                    : <div key={`${rowIndex}-${colIndex}`} className="text-slate-700 max-h-20 overflow-auto p-2">{col ? col.toString() : col}</div>
+                  }
+                </TableCell>
               ))}
             </TableRow>
-          </TableHeader>
-          <TableBody className="border-b">
-            {table[currTab || 0].map((row: string[], rowIndex: number) => (
-              <TableRow key={rowIndex} className="overflow-hidden">
-                <TableCell key={`id-${rowIndex}`} className="border-r text-slate-600">{++rowIndex}</TableCell>
-                {Object.values(row).map((col: string, colIndex: number) => (
-                  <TableCell className="border-r p-0">
-                    {(colIndex === 0 && tabs[currTab || 0] === 'Summary')
-                      ? <Button variant="link" onClick={() => handleNumberClicked(col)}>{col ? col.toString() : col}</Button>
-                      : <div key={`${rowIndex}-${colIndex}`} className="text-slate-700 max-h-20 overflow-auto p-2">{col ? col.toString() : col}</div>
-                    }
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>)
-      }
+          ))}
+        </TableBody>
+      </Table>
     </section>
   );
 };

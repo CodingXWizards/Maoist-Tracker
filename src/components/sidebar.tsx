@@ -2,11 +2,11 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { fetchDatabases } from "@/redux/reducers/databaseSlice";
-import { setDatabase, setTable } from "@/redux/reducers/infoSlice";
+import { setDatabase, setLoadingText, setTable } from "@/redux/reducers/infoSlice";
 import { fetchTableNames } from "@/redux/reducers/tableNameSlice";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "./ui/dropdown-menu";
-import { generateSummaryCDR, setTableData } from "@/redux/reducers/tableSlice";
+import { generateSummaryCDR, setLoadedDatabases } from "@/redux/reducers/tableSlice";
 import { cn } from "@/lib/utils";
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse'
@@ -52,9 +52,12 @@ export const Sidebar = () => {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    dispatch(setLoadingText("Generating Summary"));
     if (currDatabase && selectedTables) {
-      dispatch(generateSummaryCDR({ databaseName: currDatabase, tableNames: selectedTables }));
+      dispatch(setLoadedDatabases(currDatabase));
+      await dispatch(generateSummaryCDR({ databaseName: currDatabase, tableNames: selectedTables }));
     }
+    dispatch(setLoadingText(null));
   }
 
   const handleXLSXExport = () => {
@@ -99,7 +102,7 @@ export const Sidebar = () => {
             databases.length === 0
               ? <DropdownMenuItem>No Databases</DropdownMenuItem>
               : databases.map((database: string, index: number) => (
-                database.split("_").includes(type) && <DropdownMenuItem key={index} onClick={() => { dispatch(setDatabase(database)); dispatch(setTable(null)); dispatch(setTableData([])) }}>{database.split("_").splice(-1)}</DropdownMenuItem>
+                database.split("_").includes(type) && <DropdownMenuItem key={index} onClick={() => { dispatch(setDatabase(database)); dispatch(setTable(null)) }}>{database.split("_").splice(-1)}</DropdownMenuItem>
               ))
           )}
         </DropdownMenuContent>
