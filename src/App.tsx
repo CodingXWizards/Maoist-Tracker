@@ -2,6 +2,7 @@ import { BottomBar } from "@/components/bottom-bar";
 import { Sidebar } from "@/components/sidebar";
 import { TableArea } from "@/components/table-area";
 import { Tabs } from "./components/tabs";
+import { Loader } from "./components/loader";
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
         <TableArea />
         <BottomBar />
       </section>
+      <Loader />
     </main>
   );
 };
